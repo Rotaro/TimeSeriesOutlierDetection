@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'S3 bucket and read/write policy.'
+Parameters:
+  DeploymentName:
+    Type: String
+    Description: 'Name of deployment. Used as tag for all resources.'
+Resources:
+  ECR:
+    Type: 'AWS::ECR::Repository'
+    Properties:
+      Tags:
+        - Key: 'DeploymentName'
+          Value: !Ref DeploymentName
+  ECRReadWritePolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          # GetAuthorizationToken is assigned for all repositories
+          - Effect: Allow
+            Action:
+              - 'ecr:GetAuthorizationToken'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'ecr:BatchCheckLayerAvailability'
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ecr:GetRepositoryPolicy'
+              - 'ecr:DescribeRepositories'
+              - 'ecr:ListImages'
+              - 'ecr:DescribeImages'
+              - 'ecr:BatchGetImage'
+              - 'ecr:DescribeImageScanFindings'
+              - 'ecr:InitiateLayerUpload'
+              - 'ecr:UploadLayerPart'
+              - 'ecr:CompleteLayerUpload'
+              - 'ecr:PutImage'
+            Resource: !Sub
+              - 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${Repository}'
+              - { Repository: Ref ECR}
+              #- !Join ['', ['arn:aws:ecr:::', !Ref ECR]]
+  ECRReadPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          # GetAuthorizationToken is assigned for all repositories
+          - Effect: Allow
+            Action:
+              - 'ecr:GetAuthorizationToken'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'ecr:BatchCheckLayerAvailability'
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ecr:GetRepositoryPolicy'
+              - 'ecr:DescribeRepositories'
+              - 'ecr:ListImages'
+              - 'ecr:DescribeImages'
+              - 'ecr:BatchGetImage'
+              - 'ecr:DescribeImageScanFindings'
+            Resource: !Sub
+              - 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${Repository}'
+              - { Repository: !Ref ECR }
+Outputs:
+  ECR:
+    Description: 'ECR Name'
+    Value: !Ref ECR
+  ECRPolicy:
+    Description: 'ECR Policy Name'
+    Value: !Ref ECRReadWritePolicy

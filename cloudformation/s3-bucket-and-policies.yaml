@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'S3 bucket and read/write policy.'
+Parameters:
+  DeploymentName:
+    Type: String
+    Description: 'Name of deployment. Used as tag for all resources.'
+Resources:
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: 'DeploymentName'
+          Value: !Ref DeploymentName
+  S3BucketReadWritePolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:ListBucket'
+              - 's3:GetObject'
+              - 's3:PutObject'
+              - 's3:DeleteObject'
+            Resource:
+              - !Join ['', ['arn:aws:s3:::', !Ref S3Bucket]]
+              - !Join ['', ['arn:aws:s3:::', !Ref S3Bucket, '/*']]
+Outputs:
+  Bucket:
+    Description: 'S3 Bucket Name'
+    Value: !Ref S3Bucket
+  BucketPolicy:
+    Description: 'S3 Bucket Policy Name'
+    Value: !Ref S3BucketReadWritePolicy
