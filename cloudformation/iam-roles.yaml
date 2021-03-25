@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+Parameters:
+  DeploymentName:
+    Type: String
+    Description: 'Name of deployment. Used in export names, and as tag for all resources.'
+  S3BucketReadWritePolicy:
+    Type: String
+    Description: 'Name of policy for accessing S3.'
+  ECRReadWritePolicy:
+    Type: String
+    Description: 'Name of policy for accessing ECR.'
+Resources:
+  UpdateRole:
+    Type: "AWS::IAM::Role"
+    Description: "Role used to access s3 and ecr."
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - ec2.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+      Tags:
+        - Key: 'DeploymentName'
+        - Value: !Ref DeploymentName
+      Policies:
+        - !Ref S3BucketReadWritePolicy
+        - !Ref ECRReadWritePolicy
+Outputs:
+  Role:
+    Description: 'Role Name'
+    Value: !Ref UpdateRole
