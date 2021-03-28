@@ -1,6 +1,6 @@
 # Copied from https://aws.amazon.com/blogs/aws/new-for-aws-lambda-container-image-support/
 FROM continuumio/miniconda3:latest AS miniconda
-ARG FUNCTION_DIR="/app"
+ARG FUNCTION_DIR="/app/"
 
 # Install aws-lambda-cpp build dependencies
 RUN apt-get update && \
@@ -16,7 +16,7 @@ RUN mkdir -p ${FUNCTION_DIR}
 
 # Install environment
 COPY app/environment.yml ${FUNCTION_DIR}
-RUN conda env update --file "${FUNCTION_DIR}/environment.yml"
+RUN conda env update --file "${FUNCTION_DIR}environment.yml"
 
 ## Copy handler function
 COPY app/* ${FUNCTION_DIR}

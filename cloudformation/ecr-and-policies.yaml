@@ -39,7 +39,6 @@ Resources:
             Resource: !Sub
               - 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${Repository}'
               - { Repository: Ref ECR}
-              #- !Join ['', ['arn:aws:ecr:::', !Ref ECR]]
   ECRReadPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:

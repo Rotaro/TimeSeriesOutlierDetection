@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Builds docker image, tags and pushes to ECR.'
+Parameters:
+  S3Bucket:
+    Type: String
+    Description: 'ARN for s3 containing CodeBuild.zip at root.'
+  UpdateRole:
+    Type: String
+    Description: 'ARN for role with access to S3 / ECR / EC2.'
+  ECRName:
+    Type: String
+    Description: 'Name of docker repository.'
+  ImageTag:
+    Type: String
+    Default: latest
+    Description: 'Tag to use for image.'
+  DeploymentName:
+    Type: String
+    Description: 'Name of deployment. Used as tag for all resources.'
+Resources:
+  DockerBuild:
+    Type: 'AWS::CodeBuild::Project'
+    Properties:
+      ServiceRole: !Ref UpdateRole
+      Artifacts:
+        Type: no_artifacts
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:4.0
+        EnvironmentVariables:
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWS::AccountId
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: IMAGE_REPO_NAME
+            Value: !Ref ECRName
+          - Name: IMAGE_TAG
+            Value: !Ref ImageTag
+      Source:
+        Location: !Join ['/', [!Ref S3Bucket, 'CodeBuild.zip']]
+        Type: S3
+      TimeoutInMinutes: 10
+      Tags:
+        - Key: 'DeploymentName'
+          Value: !Ref DeploymentName

@@ -11,9 +11,9 @@ Parameters:
     Type: String
     Description: 'Name of policy for accessing ECR.'
 Resources:
-  UpdateRole:
+  ReadWriteRole:
     Type: "AWS::IAM::Role"
-    Description: "Role used to access s3 and ecr."
+    Description: "Service role for accessing s3 and ecr."
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -22,6 +22,7 @@ Resources:
               Principal:
                 Service:
                   - ec2.amazonaws.com
+                  - codebuild.amazonaws.com
               Action:
                 - 'sts:AssumeRole'
       Tags:
@@ -33,4 +34,4 @@ Resources:
 Outputs:
   Role:
     Description: 'Role Name'
-    Value: !Ref UpdateRole
+    Value: !Ref ReadWriteRole
