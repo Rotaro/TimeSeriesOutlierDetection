@@ -1,4 +1,6 @@
 import sys
+import logging
+import json
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Any
@@ -79,7 +81,11 @@ def find_outliers_lowess(data):
     df = data.get_df()
     df["y_orig"] = df.y
     outliers = np.zeros(len(df), dtype=bool)
+
+    # Minimum requirements for window
     rolling_window_size = rolling_window_size or max(int(frac * len(df)), 2)
+    rolling_window_min_periods = min(rolling_window_min_periods, rolling_window_size)
+
     for i in range(data.n_iterations):
         y_lowess = lowess(df.y, df.ds, frac=frac, return_sorted=False)
         df["res"] = (df.y_orig - y_lowess).abs()
@@ -115,7 +121,30 @@ def find_outliers_lowess(data):
     return None, df, outliers
 
 
+def prepare_event(event):
+    """Parses event if using lambda proxy integration (=actual payload in event["body"])"""
+    lambda_proxy = False
+    if "body" in event:
+        event = json.loads(event["body"])
+        lambda_proxy = True
+
+    return event, lambda_proxy
+
+
+def prepare_response(response, lambda_proxy):
+    """Convert response to proper lambda proxy format.
+
+    https://aws.amazon.com/premiumsupport/knowledge-center/malformed-502-api-gateway/
+    """
+    if lambda_proxy:
+        return {"statusCode": 200, "body": json.dumps(response)}
+    else:
+        return response
+
+
 def handler(event, context):
+    event, lambda_proxy = prepare_event(event)
+
     data = Data.from_event_obj(event)
 
     if data.method == "prophet":
@@ -125,13 +154,16 @@ def handler(event, context):
     else:
         raise ValueError("Invalid method (%s)!" % data.method)
 
-    return {
-        "dates": event["dates"],
-        "prediction": df_pred.yhat.values.tolist(),
-        "prediction_upper": df_pred.yhat_upper.values.tolist(),
-        "prediction_lower": df_pred.yhat_lower.values.tolist(),
-        "outliers": outliers.tolist(),
-    }
+    return prepare_response(
+        {
+            "dates": event["dates"],
+            "prediction": df_pred.yhat.values.tolist(),
+            "prediction_upper": df_pred.yhat_upper.values.tolist(),
+            "prediction_lower": df_pred.yhat_lower.values.tolist(),
+            "outliers": outliers.tolist(),
+        },
+        lambda_proxy
+    )
 
 
 def create_test_event(n_datapoints, outliers_frac=0.1, outlier_amplitude=[0.5, 1.3]):

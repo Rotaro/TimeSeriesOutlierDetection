@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Lambda function with API gateway.'
+Parameters:
+  ECRName:
+    Type: String
+    Description: 'Name of docker repository.'
+  ImageTag:
+    Type: String
+    Default: latest
+    Description: 'Tag of docker image.'
+  ApiStageName:
+    Type: String
+    Description: 'First part of API URL.'
+    Default: 'default'
+  DeploymentName:
+    Type: String
+    Description: 'Name of deployment. Used as tag for all resources.'
+Resources:
+  ApiGatewayRestAPI:
+    Type: 'AWS::ApiGateway::RestApi'
+    Properties:
+      Name: !Sub '${AWS::StackId}-restapi'
+      Tags:
+        - Key: 'DeploymentName'
+          Value: !Ref DeploymentName
+  ApiGatewayResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      ParentId: !GetAtt ApiGatewayRestAPI.RootResourceId
+      PathPart: 'tso-detection'
+      RestApiId: !Ref ApiGatewayRestAPI
+  ApiGatewayMethod:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      ResourceId: !Ref ApiGatewayResource
+      RestApiId: !Ref ApiGatewayRestAPI
+      HttpMethod: 'POST'
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      MethodResponses:
+        - ResponseModels: {"application/json": "Empty"}
+          StatusCode: 200
+      Integration:
+        Type: AWS
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFuncNameArn}/invocations'
+          - LambdaFuncNameArn: !GetAtt LambdaFunction.Arn
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates: {}
+  ApiGatewayDeployment:
+    Type: 'AWS::ApiGateway::Deployment'
+    DependsOn:
+      - ApiGatewayMethod
+    Properties:
+      RestApiId: !Ref ApiGatewayRestAPI
+      StageName: !Ref ApiStageName
+  ApiGatewayInvoke:
+    Type: AWS::Lambda::Permission
+    DependsOn: LambdaFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt LambdaFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestAPI}/${ApiStageName}/POST/tso-detection'
+
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      PackageType: 'Image'
+      Code:
+        ImageUri: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRName}:${ImageTag}'
+      MemorySize: 3000
+      Timeout: 60
+      Role: !GetAtt LambdaIamRole.Arn
+      Tags:
+        - Key: 'DeploymentName'
+          Value: !Ref DeploymentName
+  LambdaIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-lambda-execution-policy-${DeploymentName}'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Effect: 'Allow'
+                Resource: '*'
+              - Action:
+                  - 'ecr:BatchGetImage'
+                  - 'ecr:GetDownloadUrlForLayer'
+                Effect: 'Allow'
+                Resource: !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ECRName}'
+      Tags:
+        - Key: 'DeploymentName'
+          Value: !Ref DeploymentName
+
+Outputs:
+  ApiGatewayInvokeURL:
+    Value: !Sub 'https://${ApiGatewayRestAPI}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}/tso-detection'
