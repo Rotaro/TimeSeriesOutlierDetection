@@ -29,12 +29,16 @@ Resources:
               - 's3:PutObject'
               - 's3:DeleteObject'
             Resource:
-              - !Join ['', ['arn:aws:s3:::', !Ref S3Bucket]]
-              - !Join ['', ['arn:aws:s3:::', !Ref S3Bucket, '/*']]
+              - !Sub 'arn:aws:s3:::${S3Bucket}'
+              - !Sub 'arn:aws:s3:::${S3Bucket}/*'
 Outputs:
-  Bucket:
-    Description: 'S3 Bucket Name'
+  S3BucketName:
+    Description: 'S3 bucket name'
     Value: !Ref S3Bucket
-  BucketPolicy:
-    Description: 'S3 Bucket Policy Name'
+    Export:
+      Name: !Sub '${DeploymentName}-${AWS::Region}-S3BucketName'
+  S3BucketReadWritePolicy:
+    Description: 'S3 bucket policy for read / write operations'
     Value: !Ref S3BucketReadWritePolicy
+    Export:
+      Name: !Sub '${DeploymentName}-${AWS::Region}-S3BucketReadWritePolicy'

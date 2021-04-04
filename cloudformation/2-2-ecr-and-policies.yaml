@@ -3,7 +3,7 @@ Description: 'S3 bucket and read/write policy.'
 Parameters:
   DeploymentName:
     Type: String
-    Description: 'Name of deployment. Used as tag for all resources.'
+    Description: 'Name of deployment. Used in export names, and as tag for all resources.'
 Resources:
   ECR:
     Type: 'AWS::ECR::Repository'
@@ -36,37 +36,15 @@ Resources:
               - 'ecr:UploadLayerPart'
               - 'ecr:CompleteLayerUpload'
               - 'ecr:PutImage'
-            Resource: !Sub
-              - 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${Repository}'
-              - { Repository: Ref ECR}
-  ECRReadPolicy:
-    Type: 'AWS::IAM::ManagedPolicy'
-    Properties:
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          # GetAuthorizationToken is assigned for all repositories
-          - Effect: Allow
-            Action:
-              - 'ecr:GetAuthorizationToken'
-            Resource: '*'
-          - Effect: Allow
-            Action:
-              - 'ecr:BatchCheckLayerAvailability'
-              - 'ecr:GetDownloadUrlForLayer'
-              - 'ecr:GetRepositoryPolicy'
-              - 'ecr:DescribeRepositories'
-              - 'ecr:ListImages'
-              - 'ecr:DescribeImages'
-              - 'ecr:BatchGetImage'
-              - 'ecr:DescribeImageScanFindings'
-            Resource: !Sub
-              - 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${Repository}'
-              - { Repository: !Ref ECR }
+            Resource: !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ECR}'
 Outputs:
-  ECR:
+  ECRName:
     Description: 'ECR Name'
     Value: !Ref ECR
-  ECRPolicy:
+    Export:
+      Name: !Sub '${DeploymentName}-${AWS::Region}-ECRName'
+  ECRReadWritePolicy:
     Description: 'ECR Policy Name'
     Value: !Ref ECRReadWritePolicy
+    Export:
+      Name: !Sub '${DeploymentName}-${AWS::Region}-ECRReadWritePolicy'

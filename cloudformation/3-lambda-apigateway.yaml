@@ -1,12 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Lambda function with API gateway.'
 Parameters:
-  ECRName:
-    Type: String
-    Description: 'Name of docker repository.'
   ImageTag:
     Type: String
-    Default: latest
+    Default: 'latest'
     Description: 'Tag of docker image.'
   ApiStageName:
     Type: String
@@ -14,7 +11,7 @@ Parameters:
     Default: 'default'
   DeploymentName:
     Type: String
-    Description: 'Name of deployment. Used as tag for all resources.'
+    Description: 'Name of deployment. Used in export names, and as tag for all resources.'
 Resources:
   ApiGatewayRestAPI:
     Type: 'AWS::ApiGateway::RestApi'
@@ -38,7 +35,7 @@ Resources:
       ApiKeyRequired: false
       AuthorizationType: NONE
       MethodResponses:
-        - ResponseModels: {"application/json": "Empty"}
+        - ResponseModels: {'application/json': 'Empty'}
           StatusCode: 200
       Integration:
         Type: AWS
@@ -70,7 +67,11 @@ Resources:
     Properties:
       PackageType: 'Image'
       Code:
-        ImageUri: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRName}:${ImageTag}'
+        ImageUri:
+          'Fn::Sub':
+            - '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRName}:${ImageTag}'
+            - ECRName:
+                'Fn::ImportValue': !Sub '${DeploymentName}-${AWS::Region}-ECRName'
       MemorySize: 3000
       Timeout: 60
       Role: !GetAtt LambdaIamRole.Arn
@@ -105,7 +106,11 @@ Resources:
                   - 'ecr:BatchGetImage'
                   - 'ecr:GetDownloadUrlForLayer'
                 Effect: 'Allow'
-                Resource: !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ECRName}'
+                Resource:
+                  'Fn::Sub':
+                    - 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ECRName}'
+                    - ECRName:
+                        'Fn::ImportValue': !Sub '${DeploymentName}-${AWS::Region}-ECRName'
       Tags:
         - Key: 'DeploymentName'
           Value: !Ref DeploymentName

@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  DeploymentName:
+    Type: String
+    Description: 'Name of deployment. Used as tag for all resources.'
+Resources:
+  ECRAndPolicy:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: '2-2-ecr-and-policies.yaml'
+      Parameters:
+        DeploymentName: !Ref DeploymentName
+  Roles:
+    Type: 'AWS::CloudFormation::Stack'
+    DependsOn: ECRAndPolicy
+    Properties:
+      TemplateURL: '2-1-iam-roles.yaml'
+      Parameters:
+        DeploymentName: !Ref DeploymentName
+        ECRReadWritePolicy: !GetAtt ECRAndPolicy.Outputs.ECRReadWritePolicy
+        S3BucketReadWritePolicy:
+          'Fn::ImportValue': !Sub '${DeploymentName}-${AWS::Region}-S3BucketReadWritePolicy'
+  CodeBuild:
+    Type: 'AWS::CloudFormation::Stack'
+    DependsOn: Roles
+    Properties:
+      TemplateURL: '2-3-codebuild.yaml'
+      Parameters:
+        CodeBuildSourceS3Location:
+          Fn::Sub:
+            - '${S3BucketName}/codebuild.zip'
+            - S3BucketName:
+                'Fn::ImportValue': !Sub '${DeploymentName}-${AWS::Region}-S3BucketName'
+        S3ECRRole: !GetAtt Roles.Outputs.S3ECRRole
+        ECRName: !GetAtt ECRAndPolicy.Outputs.ECRName
+        DeploymentName: !Ref DeploymentName

@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Service role for accessing S3 and ECR.'
+Parameters:
+  DeploymentName:
+    Type: String
+    Description: 'Name of deployment. Used in export names, and as tag for all resources.'
+  S3BucketReadWritePolicy:
+    Type: String
+    Description: 'Policy for accessing S3.'
+  ECRReadWritePolicy:
+    Type: String
+    Description: 'Policy for accessing ECR.'
+Resources:
+  ReadWriteRole:
+    Type: 'AWS::IAM::Role'
+    Description: 'Service role for accessing S3 and ECR.'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-logging-policy-${DeploymentName}'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Effect: 'Allow'
+                Resource: '*'
+      ManagedPolicyArns:
+        - !Ref S3BucketReadWritePolicy
+        - !Ref ECRReadWritePolicy
+      Tags:
+        - Key: 'DeploymentName'
+          Value: !Ref DeploymentName
+Outputs:
+  S3ECRRole:
+    Description: 'ARN of service role for s3 and ecr'
+    Value: !Ref ReadWriteRole
