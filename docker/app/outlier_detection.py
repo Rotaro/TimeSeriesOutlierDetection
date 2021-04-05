@@ -39,6 +39,7 @@ def find_outliers_lowess(data):
     :param data: Data.
     """
     frac = data.method_kws.get("frac", 1 / 5)
+    outlier_n_std = data.method_kws.get("outlier_n_std", 2.5)
 
     rolling_window_size = data.method_kws.get("rolling_window_size")
     rolling_window_min_periods = data.method_kws.get("rolling_window_min_periods", 4)
@@ -47,17 +48,12 @@ def find_outliers_lowess(data):
     rolling_window_size = rolling_window_size or max(int(frac * len(data.y)), 2)
     rolling_window_min_periods = min(rolling_window_min_periods, rolling_window_size)
 
-    outlier_n_std = data.method_kws.get("outlier_n_std", 2.5)
-
-
-    lowess = sm.nonparametric.lowess
-
     df = data.get_df()
     df["y_orig"] = df.y
     outlier = np.zeros(len(df), dtype=bool)
 
     for i in range(data.n_iterations):
-        y_lowess = lowess(df.y, df.ds, frac=frac, return_sorted=False)
+        y_lowess = sm.nonparametric.lowess(df.y, df.ds, frac=frac, return_sorted=False)
         df["res"] = (df.y_orig - y_lowess).abs()
 
         # Use rolling window to allow for changes in noise level over "time"

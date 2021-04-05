@@ -96,20 +96,22 @@ def handler(event, context):
             "prediction": df_pred.yhat.values.tolist(),
             "prediction_upper": df_pred.yhat_upper.values.tolist(),
             "prediction_lower": df_pred.yhat_lower.values.tolist(),
-            "outliers": df_pred["outlier"].tolist(),
+            "outliers": df_pred.outlier.tolist(),
         },
         lambda_proxy
     )
 
 
 if __name__ == "__main__":
-    event, chosen_outlier = create_test_event(n_datapoints=360, outlier_frac=0.1, outlier_amplitude=[0.5, 1.3])
+    event, chosen_outlier = create_test_event(n_datapoints=180, outlier_frac=0.1, outlier_amplitude=[0.5, 1.3])
 
     data = Data.from_event_obj(event)
 
     m, df_pred = out_det.find_outliers_prophet(data)
     _, df_pred_lowess = out_det.find_outliers_lowess(data)
 
+    import matplotlib.pyplot as plt
+    plt.style.use("ggplot")
     fig = m.plot(df_pred, uncertainty=True)
     data.get_df().iloc[chosen_outlier].plot("ds", "y", kind="scatter", ax=fig.get_axes()[0], label="real outliers",
                                             marker="^", s=45)
@@ -119,3 +121,4 @@ if __name__ == "__main__":
     data.get_df().loc[df_pred_lowess.outlier].plot("ds", "y", kind="scatter", ax=fig.get_axes()[0],
                                                    label="detected outliers - lowess",
                                                    marker="<", alpha=0.3, color="green", s=186)
+    plt.tight_layout()
