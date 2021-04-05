@@ -9,16 +9,20 @@ RUN apt-get update && \
   make \
   cmake \
   unzip \
-  libcurl4-openssl-dev
+  libcurl4-openssl-dev \
+  && rm -rf /var/lib/apt/lists/*
 
 ## Create function directory
 RUN mkdir -p ${FUNCTION_DIR}
 
 # Install environment
-COPY app/environment.yml ${FUNCTION_DIR}
-RUN conda env update --file "${FUNCTION_DIR}environment.yml"
+COPY environment.yml ${FUNCTION_DIR}
+RUN conda env update --file "environment.yml"
 
-## Copy handler function
+RUN conda clean --all -y
+RUN pip cache purge
+
+# Copy application
 COPY app/* ${FUNCTION_DIR}
 
 # Add Lambda Runtime Interface Emulator and use a script in the ENTRYPOINT for simpler local runs
