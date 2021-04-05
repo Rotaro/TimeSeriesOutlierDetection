@@ -103,7 +103,7 @@ def handler(event, context):
 
 
 if __name__ == "__main__":
-    event, chosen_outlier = create_test_event(n_datapoints=180, outlier_frac=0.1, outlier_amplitude=[0.5, 1.3])
+    event, chosen_outlier = create_test_event(n_datapoints=90, outlier_frac=0.1, outlier_amplitude=[0.8, 1.2])
 
     data = Data.from_event_obj(event)
 
@@ -114,11 +114,12 @@ if __name__ == "__main__":
     plt.style.use("ggplot")
     fig = m.plot(df_pred, uncertainty=True)
     data.get_df().iloc[chosen_outlier].plot("ds", "y", kind="scatter", ax=fig.get_axes()[0], label="real outliers",
-                                            marker="^", s=45)
+                                            marker="^", s=105)
     data.get_df().loc[df_pred.outlier].plot("ds", "y", kind="scatter", ax=fig.get_axes()[0],
                                             label="detected outliers - prophet",
                                             marker="x", alpha=0.3, color="red", s=145)
     data.get_df().loc[df_pred_lowess.outlier].plot("ds", "y", kind="scatter", ax=fig.get_axes()[0],
                                                    label="detected outliers - lowess",
                                                    marker="<", alpha=0.3, color="green", s=186)
+    plt.legend(fontsize=14)
     plt.tight_layout()
