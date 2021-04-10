@@ -17,7 +17,7 @@ RUN mkdir -p ${FUNCTION_DIR}
 
 # Install environment
 COPY environment.yml ${FUNCTION_DIR}
-RUN conda env update --file "environment.yml"
+RUN conda env update --file "${FUNCTION_DIR}environment.yml"
 
 RUN conda clean --all -y
 RUN pip cache purge

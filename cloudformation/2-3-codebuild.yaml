@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Builds docker image, tags and pushes to ECR.'
+Description: 'CodeBuild project for building docker image, tagging and pushing to ECR.'
 Parameters:
   CodeBuildSourceS3Location:
     Type: String

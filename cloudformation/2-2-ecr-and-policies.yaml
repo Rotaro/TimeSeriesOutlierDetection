@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'S3 bucket and read/write policy.'
+Description: 'ECR and read/write policy.'
 Parameters:
   DeploymentName:
     Type: String
