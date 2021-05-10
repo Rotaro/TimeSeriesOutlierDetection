@@ -43,7 +43,7 @@ aws cloudformation wait stack-create-complete --stack-name $STACK_NAME-build
 ###############################
 # 3. Create docker image for labmda function
 # 3 a) Zip and copy files to s3 for building docker image using CodeBuild
-"/c/Program Files/7-Zip/7z" a -tzip -- codebuild.zip ./docker/*
+pushd docker && zip -r "${OLDPWD}/codebuild.zip" * && popd
 aws s3 cp codebuild.zip s3://$BUCKET_NAME/codebuild.zip
 
 # 3 b) Run Codebuild project (= build docker image)
