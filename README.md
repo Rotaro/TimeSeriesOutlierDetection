@@ -2,9 +2,12 @@
 Outlier detection for time series, with semi-automatic integration for deployment as an AWS API.  
 ![alt text](./docs/outlier_example.png "Synthetic Example")  
 ## Description
-The outlier detection is implemented using [fbprophet](https://facebook.github.io/prophet/) and [lowess](https://www.statsmodels.org/dev/generated/statsmodels.nonparametric.smoothers_lowess.lowess.html).
+The outlier detection is implemented using [fbprophet](https://facebook.github.io/prophet/) and
+[lowess](https://www.statsmodels.org/dev/generated/statsmodels.nonparametric.smoothers_lowess.lowess.html).
 
-The AWS integration is implemented using basic [Cloudformation](https://aws.amazon.com/cloudformation/). The integration has some "manual" steps as some steps require files to be available in S3.
+The AWS integration is implemented using basic [Cloudformation](https://aws.amazon.com/cloudformation/)
+or [CDK](https://aws.amazon.com/cdk/). The Cloudformation integration has some manual steps, 
+while the CDK integration requires having docker installed. 
 
 ## Outlier Detection Algorithms
 There are two different algorithms. Both iteratively fit a model and exclude points which are considered outliers. 
@@ -12,11 +15,19 @@ There are two different algorithms. Both iteratively fit a model and exclude poi
 2. Lowess based: Points which are far from the lowess fit compared to nearby points are considered outliers.
 
 ## AWS Integration
-The API is deployed as a docker image ([ECR](https://aws.amazon.com/ecr/) & [CodeBuild](https://aws.amazon.com/codebuild/)). The API uses [Lambda](https://aws.amazon.com/lambda/) with an [API Gateway](https://aws.amazon.com/api-gateway/).  
+The API backend is deployed as a [Lambda function](https://aws.amazon.com/lambda/) using a docker image. 
+Requests are passed using [API Gateway](https://aws.amazon.com/api-gateway/).
 
-## Installation
-### Prerequisites
-You will need to have [AWS CLI](https://aws.amazon.com/cli/) installed, and credentials configured with permissions for:
+The Cloudformation integration uses [CodeBuild](https://aws.amazon.com/codebuild/) to build the docker image, while
+the CDK intergation builds the image locally.
+
+# Deployment
+### Clone repository
+`git clone https://github.com/Rotaro/TimeSeriesOutlierDetection`
+
+### AWS Prerequisites
+You will need to have [AWS CLI](https://aws.amazon.com/cli/) installed, 
+and credentials configured with permissions for at least:
 - Cloudformation
 - IAM policies / roles
 - S3
@@ -26,11 +37,12 @@ You will need to have [AWS CLI](https://aws.amazon.com/cli/) installed, and cred
 - Lambda 
 - API Gateway
 
-### Clone repository
-`git clone https://github.com/Rotaro/TimeSeriesOutlierDetection`
+### Deployment using Cloudformation
+Follow the steps in [build_steps_cloudformation](build_steps_cloudformation.sh). 
+If you run the file, you might want to comment out the cleanup part! 
 
-### API deployment with cloudformation
-Follow the steps in [build_steps_cloudformation](build_steps_cloudformation.sh). If you run the file, you might want to comment out the cleanup part! 
+### Deployment using CDK
+See [CDK instructions](cdk/README.md).
 
 ## Using the API
 The api expects json requests with the following structure:
